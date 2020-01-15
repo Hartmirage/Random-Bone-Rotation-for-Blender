@@ -4,18 +4,37 @@ import mathutils
 import os
 from random import uniform
 
-WantedHand = 5 #for Hand1 to Hand6
+DEBUG = True
+
+WantedHand = 2 #for Hand1 to Hand6
 NumberOfPoses = 1 #Number of Renders and LabelFiles that will be created
 StartAt = 0 #if script was run before and you just want a few extra
-Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved
+#Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved(windows)
+Directory = '/Users/Oliver/Documents/projektarbeit/Handv2mitscript/exports' #(Mac)
 
-#rigs 1 to 6 from the correspondent collection e.g. Hand2 ->  Rig_Hand_2
-Rig1 = bpy.data.objects["Rig_Hand_1"]
-Rig2 = bpy.data.objects["Rig_Hand_2"]
-Rig3 = bpy.data.objects["Rig_Hand_3"]
-Rig4 = bpy.data.objects["Rig_Hand_4"]
-Rig5 = bpy.data.objects["Rig_Hand_5"]
-Rig6 = bpy.data.objects["Rig_Hand_6"]
+FilePath = ''
+ImageFilePath = ''
+LabelsFilePath = ''
+
+hasWatch = False
+hasRing = False
+hasSleeve = False
+
+def getActiveRig():
+    for x in bpy.context.view_layer.objects:
+        if x == bpy.data.objects["Rig_Hand_1"]:
+            return x
+        if x == bpy.data.objects["Rig_Hand_2"]:
+            return x
+        if x == bpy.data.objects["Rig_Hand_3"]:
+            return x
+        if x == bpy.data.objects["Rig_Hand_4"]:
+            return x
+        if x == bpy.data.objects["Rig_Hand_5"]:
+            return x
+        if x == bpy.data.objects["Rig_Hand_6"]:
+            return x
+
 
 def activeRig(RigNumber):
     switcher = {
@@ -28,7 +47,7 @@ def activeRig(RigNumber):
              }
     return switcher.get(RigNumber,"Invalid Handnumber")
 
-#anothe aproach to determin the active Rig ##############################TODO
+#another aproach to determin the active Rig ##############################TODO
 def setActiveRig():
     for x in bpy.context.view_layer.objects:
         helpSetActiveRig(x.name)
@@ -54,8 +73,8 @@ def rotateBone(self):
     #print(self)
 
 #does the single bone rotation for all bones that have a constraint
-def rotateBones():
-    for x in (ARig.pose.bones):
+def rotateBones(Rig):
+    for x in (Rig.pose.bones):
         try:
             rotateBone(x)
         except:
@@ -70,23 +89,23 @@ def resetBone(self):
     self.rotation_axis_angle[3] = 0.0
 
 #does the single bone reset for all bones
-def resetBones():
-    for x in (ARig.pose.bones):
+def resetBones(Rig):
+    for x in (Rig.pose.bones):
         try:
             resetBone(x)
         except:
             pass
         
 #rotates all bones, renders the image and resets the bones
-def rotateAndRender(counter):
-    rotateBones()
+def rotateAndRender(counter, Rig):
+    rotateBones(Rig)
     print('____________________')
 
     renderImage(counter)
     
     exportLabels(counter)
     
-    resetBones()
+    resetBones(Rig)
 
 #renders image and saves it at the given path at the top of the script
 def renderImage(counter):
@@ -98,8 +117,8 @@ def renderImage(counter):
 
 #formats the float to supress 1*e10 etc. format
 def formatFloat(float):
-    #return '{:.12f}'.format(round(float, roundLocationDoublesBy))
     return '{:.12f}'.format(float)
+
 
 #writes name of bone, HeadLocationVector and TailLocationVector in txt file for each bone
 def exportLabels(counter):
@@ -131,27 +150,37 @@ def createDirectory(path):
     else:
         print ("Successfully created the directory %s " % path)
 
-#setActiveRig() ###todo
+def main():
+    #select ActiveRig
+    ARig = getActiveRig()
+    
+    #set ARig to active Object to make sure that enabling Pose Mode is possible
+    bpy.context.view_layer.objects.active = ARig
+    #make sure to be in POSE mode, so the rotation will show in the rendered Image(in Object mode you won't see the difference)
+    bpy.ops.object.mode_set(mode='POSE')
+    
+    #setting the Path Variables
+    #needs to be global to get the FilePath Varibale from the top. leaving out "global" would create a new local Variable
+    global FilePath
+    FilePath = Directory + '/' + ARig.name
+    global ImageFilePath
+    ImageFilePath = FilePath + '/images' #directory where the images will be saved
+    global LabelsFilePath
+    LabelsFilePath = FilePath + '/labels' #directory where the labelfiles will b saved
+    
+    #creates needed Directorys
+    createDirectory(FilePath)
+    createDirectory(LabelsFilePath)
+    createDirectory(ImageFilePath)
+    
+    #loop for the wanted number of images
+    for i in range(StartAt, StartAt + NumberOfPoses):
+        rotateAndRender(i, ARig)
+        print(i)
+        
+main()
 
-#select ActiveRig according to the WantedHand at the start of the script
-ARig = activeRig(WantedHand)
-
-#set ARig to active Object to make sure that enabling Pose Mode is possible
-bpy.context.view_layer.objects.active = ARig
-#make sure to be in POSE mode, so the rotation will show in the rendered Image(in Object mode you won't see the difference)
-bpy.ops.object.mode_set(mode='POSE')
-
-#setting the Path Variables
-FilePath = Directory + '/' + ARig.name
-ImageFilePath = FilePath + '/images' #directory where the images will be saved
-LabelsFilePath = FilePath + '/labels' #directory where the labelfiles will b saved
-
-#creates needed Directorys
-createDirectory(FilePath)
-createDirectory(LabelsFilePath)
-createDirectory(ImageFilePath)
-
-#loop for the wanted number of images
-for i in range(StartAt, StartAt + NumberOfPoses):
-    rotateAndRender(i)
-    print(i)
+ 
+#kleidungsstücke zufällig und im export file labeln
+#links rechts labeln
+#tiefenbild(opencv)
