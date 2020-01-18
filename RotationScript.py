@@ -5,44 +5,13 @@ import os
 from random import randrange
 from random import uniform
 
+#define all needed variables that are set by the user here
 NumberOfPoses = 1 #Number of Renders and LabelFiles that will be created
 StartAt = 0 #if script was run before and you just want a few extra
 #Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved(windows)
 Directory = '/Users/Oliver/Documents/projektarbeit/Handv2mitscript/exports' #(Mac)
 
-#define all needed variables that are set by the user here
-
 #define all needed variables that are set by the script here
-
-
-#call this before the mainloop
-def createDirectories:
-    #take the defined filepath for export and make sure it exists(create it)
-    #create additional directories inside the mainpath for picutures and labels
-
-def hideAllHands:
-    #before the mainloop hide all hand collections
-
-#call this inside the mainloop
-def prepareHand:
-    #choose one hand, set as active, unhide the collection of active hand
-    #hide/unhide clothes, ring and watch (randomized)
-    #rotate bones randomized within the limits of the constraints
-    
-#####insert all methods helping the prepare method underneath
-
-def export:
-    #export labels: right/left, hasWatch(bool), hasRing(bool), hasSleeve(bool)
-    #export labels for each bone(position, rotation??)
-    #render image and save
-    #render tiefenbild?
-    
-#####insert all methods helping the export method underneath
-
-def reset:
-    #reset rotation of bones
-    #hide the active hand collection
-
 FilePath = ''
 ImageFilePath = ''
 LabelsFilePath = ''
@@ -51,9 +20,39 @@ hasWatch = False
 hasRing = False
 hasSleeve = False
 
-ActiveCollection = bpy.data.collections["Hand 1"]
-
+ActiveCollection = bpy.data.collections["Hand 1"] #this is only done to set the right type
 HandList = []
+
+#call this before the mainloop
+def createDirectories():
+    #take the defined filepath for export and make sure it exists(create it)
+    #create additional directories inside the mainpath for picutures and labels
+
+def hideAllHands():
+    #before the mainloop hide all hand collections
+
+#call this inside the mainloop
+def prepareHand():
+    #choose one hand, set as active, unhide the collection of active hand
+    #hide/unhide clothes, ring and watch (randomized)
+    #rotate bones randomized within the limits of the constraints
+    
+#####insert all methods helping the prepare method underneath
+
+def export():
+    #export labels: right/left, hasWatch(bool), hasRing(bool), hasSleeve(bool)
+    #export labels for each bone(position, rotation??)
+    #render image and save
+    #render tiefenbild?
+    
+#####insert all methods helping the export method underneath
+
+def reset():
+    #reset rotation of bones
+    #hide the active hand collection
+
+def mainloop():
+    
 
 class Hand:
   def __init__(self, collection, watch, ring, cloth1, cloth2, cloth3, rig):
