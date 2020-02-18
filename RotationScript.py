@@ -5,55 +5,45 @@ import os
 from random import randrange
 from random import uniform
 
-#define all needed variables that are set by the user here
-NumberOfPoses = 1 #Number of Renders and LabelFiles that will be created
-StartAt = 0 #if script was run before and you just want a few extra
-#Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved(windows)
-Directory = '/Users/Oliver/Documents/projektarbeit/Handv2mitscript/exports' #(Mac)
+#define all needed variables that are set by the user here -----------------------------------------------------------------------------------
+NumberOfPoses = 1 #Number of wanted results 
+StartAt = 0 #if script was run before and an enhancement of the dataset is wanted, set the index accordingly.
+#if the dataset features the files 0 to 100 set the StartAt variable to 101.
+Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved(windows)-------------------------WINDOWS FORMAT
+#Directory = '/Users/Oliver/Documents/projektarbeit/Handv2mitscript/exports' #-----------------------------------------------------MAC FORMAT
 
-#define all needed variables that are set by the script here
-FilePath = ''
-ImageFilePath = ''
-LabelsFilePath = ''
-
+#define all needed variables that are set by the script here----------------------------------------------------------------------------------
+#booleans will be set via the script and will later be exported in the labels file
 hasWatch = False
 hasRing = False
 hasSleeve = False
 
-ActiveCollection = bpy.data.collections["Hand 1"] #this is only done to set the right type
+ActiveCollection = bpy.data.collections["HandCollection1"] #set ActiveCollection to Hand 1 at start
 HandList = []
 
 #call this before the mainloop
+#---------------------create Directories and everything that is used by the function ---------------------------------------------------------
+
+#creates the Directory with a given path --- helpmethod for createDirectories
+def createDirectory(path):
+    try:
+        os.mkdir(path)
+    except OSError:
+        print ("Creation of the directory %s failed" % path)
+    else:
+        print ("Successfully created the directory %s " % path)
+
+#this makes sure the main Directory exists, as well as the Directories for the renders and the labels
 def createDirectories():
-    #take the defined filepath for export and make sure it exists(create it)
-    #create additional directories inside the mainpath for picutures and labels
-
-def hideAllHands():
-    #before the mainloop hide all hand collections
-
-#call this inside the mainloop
-def prepareHand():
-    #choose one hand, set as active, unhide the collection of active hand
-    #hide/unhide clothes, ring and watch (randomized)
-    #rotate bones randomized within the limits of the constraints
+    #create additional directories inside the mainpath for pictures and labels
+    ImageFilePath = Directory + '/images' #directory where the images will be saved
+    LabelsFilePath = Directory + '/labels' #directory where the labelfiles will b saved
+    #take the defined filepaths for export and make sure they exist(create them)
+    createDirectory(Directory)
+    createDirectory(LabelsFilePath)
+    createDirectory(ImageFilePath)
     
-#####insert all methods helping the prepare method underneath
-
-def export():
-    #export labels: right/left, hasWatch(bool), hasRing(bool), hasSleeve(bool)
-    #export labels for each bone(position, rotation??)
-    #render image and save
-    #render tiefenbild?
-    
-#####insert all methods helping the export method underneath
-
-def reset():
-    #reset rotation of bones
-    #hide the active hand collection
-
-def mainloop():
-    
-
+#object to Hold information of Hand
 class Hand:
   def __init__(self, collection, watch, ring, cloth1, cloth2, cloth3, rig):
     self.collection = collection
@@ -64,7 +54,14 @@ class Hand:
     self.cloth3 = cloth3
     self.rig = rig
 
+
+##############TODO###################
 def initHands():
+    for x in bpy.data.collections:
+        if "HandCollection" in x.name:
+            Hand = Hand()
+
+def initHands2():
     Hand1 = Hand(bpy.data.collections["Hand 1"],
                         bpy.data.collections["Watch Hand 1"],
                         bpy.data.collections["Ring Hand 1"],
@@ -118,6 +115,46 @@ def initHands():
                         None,
                         bpy.data.objects["Rig_Hand_6"])
     HandList.append(Hand6)
+
+def hideAllHands():
+    #before the mainloop hide all hand collections
+    for x in HandList:
+        x.collection.hide_viewport = True
+
+def unhideOne():
+    HandList[1].hide_viewport = False        
+
+#this method need to run before the main loop to prepare all the collections and directories
+def init():    
+    createDirectories()
+    initHands()
+    #hideAllHands()
+
+
+#call this inside the mainloop
+#def prepareHand():
+    #choose one hand, set as active, unhide the collection of active hand
+    #hide/unhide clothes, ring and watch (randomized)
+    #rotate bones randomized within the limits of the constraints
+    
+#####insert all methods helping the prepare method underneath
+
+#def export():
+    #export labels: right/left, hasWatch(bool), hasRing(bool), hasSleeve(bool)
+    #export labels for each bone(position, rotation??)
+    #render image and save
+    #render tiefenbild?
+    
+#####insert all methods helping the export method underneath
+
+#def reset():
+    #reset rotation of bones
+    #hide the active hand collection
+
+#def mainloop():
+
+
+#------------------------------------------------------------------------------------------------------------ main loop
 
 #returns the Hand Rig of the Hand Collection that is visible
 def getActiveRig():
@@ -229,14 +266,7 @@ def exportLabels(counter, Rig):
             pass
     f.close()
 
-#creates the Directory with a given path
-def createDirectory(path):
-    try:
-        os.mkdir(path)
-    except OSError:
-        print ("Creation of the directory %s failed" % path)
-    else:
-        print ("Successfully created the directory %s " % path)
+
 
 def main():
     #select ActiveRig
@@ -280,8 +310,7 @@ def testing():
     hideExcept(HandList[1])
     
     
-#main()
-testing()
+init()
 
  
 #kleidungsstücke zufällig und im export file labeln
@@ -299,5 +328,5 @@ testing()
 #Bones zurückrotieren
 #das ganze loopen
 
-def generateData():
+#def generateData():
     
