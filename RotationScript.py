@@ -7,7 +7,8 @@ from random import uniform
 WantedHand = 5 #for Hand1 to Hand6
 NumberOfPoses = 1 #Number of Renders and LabelFiles that will be created
 StartAt = 0 #if script was run before and you just want a few extra
-Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved
+#Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved
+Directory = '/Users/Oliver/Documents/projektarbeit/Handv2mitscript/exports' #(Mac)
 
 #rigs 1 to 6 from the correspondent collection e.g. Hand2 ->  Rig_Hand_2
 Rig1 = bpy.data.objects["Rig_Hand_1"]
