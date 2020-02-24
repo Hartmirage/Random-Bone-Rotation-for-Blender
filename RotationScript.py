@@ -3,6 +3,7 @@ import math
 import mathutils
 import os
 from random import randrange
+from random import randint
 from random import uniform
 
 #define all needed variables that are set by the user here -----------------------------------------------------------------------------------
@@ -18,7 +19,7 @@ hasWatch = False
 hasRing = False
 hasSleeve = False
 
-ActiveCollection = bpy.data.collections["HandCollection1"] #set ActiveCollection to Hand 1 at start
+ActiveCollection = bpy.data.collections["CollectionHand1"] #set ActiveCollection to Hand 1 at start
 HandList = []
 
 #call this before the mainloop
@@ -45,97 +46,110 @@ def createDirectories():
     
 #object to Hold information of Hand
 class Hand:
-  def __init__(self, collection, watch, ring, cloth1, cloth2, cloth3, rig):
+  def __init__(self, collection, watches, rings, clothes, rig):
     self.collection = collection
-    self.watch = watch
-    self.ring = ring
-    self.cloth1 = cloth1
-    self.cloth2 = cloth2
-    self.cloth3 = cloth3
+    self.watches = watches
+    self.rings = rings
+    self.clothes = clothes
     self.rig = rig
 
+def getSubString(string, startIndex, endIndex):
+    returnString = ''
+    for i in range(startIndex, endIndex):
+        returnString += string[i]
+    return returnString
 
-##############TODO###################
+def getSubCollection(string):
+    List = []
+    for col in bpy.data.collections:
+        if string in col.name:
+            List.append(col)
+    return List  
+
+def getRig(string):
+    for rig in bpy.data.objects:
+        if string in rig.name:
+            return rig
+
 def initHands():
     for x in bpy.data.collections:
-        if "HandCollection" in x.name:
-            Hand = Hand()
-
-def initHands2():
-    Hand1 = Hand(bpy.data.collections["Hand 1"],
-                        bpy.data.collections["Watch Hand 1"],
-                        bpy.data.collections["Ring Hand 1"],
-                        bpy.data.collections["Cloth 1 Hand 1"],
-                        bpy.data.collections["Cloth 2 Hand 1"],
-                        bpy.data.collections["Cloth 3 Hand 1"],
-                        bpy.data.objects["Rig_Hand_1"])
-    HandList.append(Hand1)
-    
-    Hand2 = Hand(bpy.data.collections["Hand 2"],
-                        bpy.data.collections["Watch Hand 2"],
-                        bpy.data.collections["Ring Hand 2"],
-                        bpy.data.collections["Cloth 1 Hand 2"],
-                        bpy.data.collections["Cloth 2 Hand 2"],
-                        bpy.data.collections["Cloth 3 Hand 2"],
-                        bpy.data.objects["Rig_Hand_2"])
-    HandList.append(Hand2)
-    
-    Hand3 = Hand(bpy.data.collections["Hand 3"],
-                        bpy.data.collections["Watch Hand 3"],
-                        bpy.data.collections["Ring Hand 3"],
-                        bpy.data.collections["Cloth 1 Hand 3"],
-                        bpy.data.collections["Cloth 2 Hand 3"],
-                        bpy.data.collections["Cloth 3 Hand 3"],
-                        bpy.data.objects["Rig_Hand_3"])
-    HandList.append(Hand3)
-    
-    Hand4 = Hand(bpy.data.collections["Hand 4"],
-                        None,
-                        bpy.data.collections["Ring Hand 4"],
-                        None,
-                        None,
-                        None,
-                        bpy.data.objects["Rig_Hand_4"])
-    HandList.append(Hand4)
-    
-    Hand5 = Hand(bpy.data.collections["Hand 5"],
-                        bpy.data.collections["Watch Hand 5"],
-                        bpy.data.collections["Ring Hand 5"],
-                        bpy.data.collections["Cloth 1 Hand 5"],
-                        bpy.data.collections["Cloth 2 Hand 5"],
-                        bpy.data.collections["Cloth 3 Hand 5"],
-                        bpy.data.objects["Rig_Hand_5"])
-    HandList.append(Hand5
-    )
-    Hand6 = Hand(bpy.data.collections["Hand 6"],
-                        bpy.data.collections["Watch Hand 6"],
-                        bpy.data.collections["Ring Hand 6"],
-                        bpy.data.collections["Cloth 1 Hand 6"],
-                        bpy.data.collections["Cloth 2 Hand 6"],
-                        None,
-                        bpy.data.objects["Rig_Hand_6"])
-    HandList.append(Hand6)
+        if "CollectionHand" in x.name:
+            #HandList.append(Hand())
+            Name = getSubString(x.name, len(x.name)-5, len(x.name))
+            Collection = x
+            Watch = getSubCollection(Name + "Watch")
+            HandList.append(Hand(x,
+                                    getSubCollection(Name + "Watch"),
+                                    getSubCollection(Name + "Ring"),
+                                    getSubCollection(Name + "Cloth"),
+                                    getRig(Name + "Rig")))
 
 def hideAllHands():
     #before the mainloop hide all hand collections
     for x in HandList:
-        x.collection.hide_viewport = True
-
-def unhideOne():
-    HandList[1].hide_viewport = False        
+        x.collection.hide_viewport = True      
 
 #this method need to run before the main loop to prepare all the collections and directories
 def init():    
     createDirectories()
     initHands()
-    #hideAllHands()
+    hideAllHands()
 
 
 #call this inside the mainloop
-#def prepareHand():
+def unhideOne(Hand):
+    Hand.collection.hide_viewport = False  
+    
+def hideHand(Hand):
+    Hand.collection.hide_viewport = True
+
+def randomize(Hand):
+    #hide all watches, rings and sleeves
+    for x in Hand.watches:
+        x.hide_viewport = True
+    for x in Hand.rings:
+        x.hide_viewport = True
+    for x in Hand.clothes:
+        x.hide_viewport = True
+    
+    numOfWatches = len(Hand.watches)
+    randWatch = 0    
+    if numOfWatches != 0:
+        randWatch = randint(0, numOfWatches) 
+    if randWatch != 0 and numOfWatches != 0:
+        Hand.watches[randWatch - 1].hide_viewport = False
+        hasWatch = True
+    else:
+        hasWatch = False
+    
+    numOfRings = len(Hand.rings)
+    randRing = 0
+    if numOfRings != 0:
+        randRing = randint(0, numOfRings)
+    if randRing != 0 and numOfRings != 0:
+        Hand.rings[randRing - 1].hide_viewport = False
+        hasRing = True
+    else:
+        hasRing = False
+        
+    numOfClothes = len(Hand.clothes)
+    randCloth = 0
+    if numOfClothes != 0:
+        randCloth = randint(0, numOfClothes)
+    if randCloth != 0 and numOfClothes != 0:
+        Hand.clothes[randCloth - 1].hide_viewport = False
+        hasSleeve = True
+    else:
+        hasSleeve = False
+    
+
+
+
+def prepareHand(index):
     #choose one hand, set as active, unhide the collection of active hand
     #hide/unhide clothes, ring and watch (randomized)
     #rotate bones randomized within the limits of the constraints
+    pass
     
 #####insert all methods helping the prepare method underneath
 
@@ -151,48 +165,31 @@ def init():
     #reset rotation of bones
     #hide the active hand collection
 
-#def mainloop():
+def loop():
+    #choose one Hand random
+    temp = len(HandList)
+    HandIndex = randrange(temp)
+    Hand = HandList[HandIndex]
+    #unhide it
+    unhideOne(Hand)
+    
+    #randomizeClothing and Rotate Bones
+    randomize(Hand)
+    
+    resetBones(Hand.rig)
+    rotateBones(Hand.rig)
+    
+    
+    
+    
+    
+    
+    #hide it again
+    #hideHand(HandIndex) ##-----------------------------------------------------------uncomment when run in loop
+
 
 
 #------------------------------------------------------------------------------------------------------------ main loop
-
-#returns the Hand Rig of the Hand Collection that is visible
-def getActiveRig():
-    for x in bpy.context.view_layer.objects:
-        if x == bpy.data.objects["Rig_Hand_1"]:
-            return x
-        if x == bpy.data.objects["Rig_Hand_2"]:
-            return x
-        if x == bpy.data.objects["Rig_Hand_3"]:
-            return x
-        if x == bpy.data.objects["Rig_Hand_4"]:
-            return x
-        if x == bpy.data.objects["Rig_Hand_5"]:
-            return x
-        if x == bpy.data.objects["Rig_Hand_6"]:
-            return x
-
-def setActiveCollection(Rig):
-    global ActiveCollection
-    if Rig == bpy.data.objects["Rig_Hand_1"]:
-        ActiveCollection = bpy.data.collections["Hand 1"]
-    if Rig == bpy.data.objects["Rig_Hand_2"]:
-        ActiveCollection = bpy.data.collections["Hand 2"]
-    if Rig == bpy.data.objects["Rig_Hand_3"]:
-        ActiveCollection = bpy.data.collections["Hand 3"]
-    if Rig == bpy.data.objects["Rig_Hand_4"]:
-        ActiveCollection = bpy.data.collections["Hand 4"]
-    if Rig == bpy.data.objects["Rig_Hand_5"]:
-        ActiveCollection = bpy.data.collections["Hand 5"]
-    if Rig == bpy.data.objects["Rig_Hand_6"]:
-        ActiveCollection = bpy.data.collections["Hand 6"]
-
-def randomizeClothing(Collection):
-    sleeve = randrange(5) #gets random integer between 0 and 4
-    ring = randrange(2)
-    watch = randrange(2)
-    
-    
 
 #rotates a single bone within the limits of the constaint
 def rotateBone(self):
@@ -311,6 +308,7 @@ def testing():
     
     
 init()
+loop()
 
  
 #kleidungsstücke zufällig und im export file labeln
