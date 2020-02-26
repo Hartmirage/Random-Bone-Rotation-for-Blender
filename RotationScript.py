@@ -5,9 +5,11 @@ import os
 from random import randrange
 from random import randint
 from random import uniform
+from datetime import datetime
+
 
 #define all needed variables that are set by the user here -----------------------------------------------------------------------------------
-NumberOfPoses = 10 #Number of wanted results 
+NumberOfPoses = 5 #Number of wanted results 
 StartAt = 0 #if script was run before and an enhancement of the dataset is wanted, set the index accordingly.
 #if the dataset features the files 0 to 100 set the StartAt variable to 101.
 Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved(windows)-------------------------WINDOWS FORMAT
@@ -18,6 +20,7 @@ Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output 
 hasWatch = False
 hasRing = False
 hasSleeve = False
+isLeftHand = False
 HandList = []
 ImageFilePath = Directory + '/images' #directory where the images will be saved
 LabelsFilePath = Directory + '/labels' #directory where the labelfiles will b saved
@@ -107,6 +110,14 @@ def unhideOne(Hand):
         i.hide_render = False
     for i in Hand.clothes:
         i.hide_render = False
+    ForeArmBone = Hand.rig.pose.bones[0].name
+    side = getSubString(ForeArmBone, len(ForeArmBone) - 1, len(ForeArmBone))
+    if 'l' in side:
+        isLeftHand = True
+    else:
+        isLeftHand = False
+        
+    print(Hand.collection.name)
 
 #unhides the collection in the Viewport    
 def hideHand(Hand):
@@ -123,11 +134,11 @@ def hideHand(Hand):
 def randomize(Hand):
     #hide all watches, rings and sleeves
     for x in Hand.watches:
-        x.hide_viewport = True
+        x.hide_render = True
     for x in Hand.rings:
-        x.hide_viewport = True
+        x.hide_render = True
     for x in Hand.clothes:
-        x.hide_viewport = True
+        x.hide_render = True
     
     #determines if the watch is shown or not
     numOfWatches = len(Hand.watches)
@@ -137,8 +148,10 @@ def randomize(Hand):
     if randWatch != 0 and numOfWatches != 0:
         Hand.watches[randWatch - 1].hide_render = False
         hasWatch = True
+        print(Hand.watches[randWatch - 1].name)
     else:
         hasWatch = False
+        print("no Watch")
     
     #determines if the ring is shown or not
     numOfRings = len(Hand.rings)
@@ -148,8 +161,10 @@ def randomize(Hand):
     if randRing != 0 and numOfRings != 0:
         Hand.rings[randRing - 1].hide_render = False
         hasRing = True
+        print(Hand.rings[randRing - 1].name)
     else:
         hasRing = False
+        print("no Ring")
     
     #determines if a sleeve is shown or not and which one of them    
     numOfClothes = len(Hand.clothes)
@@ -159,10 +174,12 @@ def randomize(Hand):
     if randCloth != 0 and numOfClothes != 0:
         Hand.clothes[randCloth - 1].hide_render = False
         hasSleeve = True
+        print(Hand.clothes[randCloth - 1].name)
     else:
         hasSleeve = False
+        print("no Cloth")
     
-#rotates a single bone within the limits of the constaint
+#rotates a single bone within the limits of the constraint
 def rotateBone(self):
     self.rotation_mode = 'XYZ'
     self.rotation_euler.rotate_axis('X', uniform(self.constraints[0].min_x, self.constraints[0].max_x))
@@ -202,12 +219,25 @@ def renderImage(counter):
     bpy.context.scene.render.filepath = path
     bpy.ops.render.render(write_still = 1)
 
+def renderLeapImage(counter):
+    bpy.context.scene.camera = bpy.data.objects["IRCamera_L"]
+    path = ImageFilePath + '/' + str(counter) + 'l.png'
+    bpy.context.scene.render.image_settings.file_format = 'PNG'
+    bpy.context.scene.render.filepath = path
+    bpy.ops.render.render(write_still = 1)
+    
+    bpy.context.scene.camera = bpy.data.objects["IRCamera_R"]
+    path2 = ImageFilePath + '/' + str(counter) + 'r.png'
+    bpy.context.scene.render.image_settings.file_format = 'PNG'
+    bpy.context.scene.render.filepath = path2
+    bpy.ops.render.render(write_still = 1)
+
 #formats the float to supress 1*e10 etc. format
 def formatFloat(float):
     return '{:.12f}'.format(float)
 
 #writes name of bone, HeadLocationVector and TailLocationVector in txt file for each bone
-def exportLabels(counter, Rig):
+def exportLabels(counter, Rig, HandCollection):
     path = LabelsFilePath + '/' + str(counter) + '.txt'
     f = open(str(path), 'w')
     for x in (Rig.pose.bones):
@@ -225,23 +255,12 @@ def exportLabels(counter, Rig):
             f.write('\n')
         except:
             pass
-    f.close()
-
-
-
-#def export():
-    #export labels: right/left, hasWatch(bool), hasRing(bool), hasSleeve(bool)
-    #export labels for each bone(position, rotation??)
-    #render image and save
-    #render tiefenbild?
-    
-def showAll():
-    for x in HandList:
-        x.collection.hide_viewport = False 
-
-def showAllC():
-    for col in bpy.data.collections:
-        col.hide_viewport = False
+    f.write('hasWatch = ' + str(hasWatch) + '\n')
+    f.write('hasRing = ' + str(hasRing) + '\n')
+    f.write('hasSleeve = ' + str(hasSleeve) + '\n')
+    f.write('isLeftHand = ' + str(isLeftHand) + '\n')
+    f.write('HandCollection = ' + str(HandCollection))
+    f.close()  
 
 #the main method
 def loop():
@@ -260,53 +279,24 @@ def loop():
         #rotate the Bones of the rig
         rotateBones(Hand.rig)
     
-        renderImage(index)
-        #exportLabels(counter, Hand.rig)
+        #renderImage(index)
+        renderLeapImage(index)
+        exportLabels(index, Hand.rig, Hand.collection)
     
-        #showAll()
-        #showAllC()
         resetBones(Hand.rig)
         #hide it again
         hideHand(Hand) 
+        
+        now = datetime.now()
 
+        current_time = now.strftime("%H:%M:%S")
+        print("Current Time = ", current_time)
+        print('-----------------\n')
 
-
-#------------------------------------------------------------------------------------------------------------ main loop
-
-
-
-
-def main():
-    
-    #set ARig to active Object to make sure that enabling Pose Mode is possible
-    bpy.context.view_layer.objects.active = ActiveRig
-    #make sure to be in POSE mode, so the rotation will show in the rendered Image(in Object mode you won't see the difference)
-    bpy.ops.object.mode_set(mode='POSE')
-    
-    
-    #loop for the wanted number of images
-    for i in range(StartAt, StartAt + NumberOfPoses):
-        rotateAndRender(i, ActiveRig)
-        print(i)
-           
+#------------------------ main -------------       
 init()
 loop()
+print("___________script finished")
 
- 
-#kleidungsstücke zufällig und im export file labeln
-#links rechts labeln
+
 #tiefenbild(opencv)
-
-#letztlicher ablauf in pseudo:
-#Pfade setzen und ordner generiern
-#Hände(class) erstellen und in Liste adden
-#zufällig alle ausser einer Hand ausblenden
-#zufällig Kleidung, Ring und Uhr ein/ausblenden
-#Bones zufällig rotieren
-#Position der Bones, sowie Kleidung(bool) Uhr(bool) und Ring(bool) auslesen und labeln
-#Bild rendern
-#Bones zurückrotieren
-#das ganze loopen
-
-#def generateData():
-    
