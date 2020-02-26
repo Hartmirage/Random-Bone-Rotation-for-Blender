@@ -7,25 +7,28 @@ from random import randint
 from random import uniform
 from datetime import datetime
 
-
-#define all needed variables that are set by the user here -----------------------------------------------------------------------------------
-NumberOfPoses = 5 #Number of wanted results 
+#--------------------------------------- START OF [VARIABLES] ----------------------------------------------------------
+#
+#define all needed variables that are set by the user here 
+NumberOfPoses = 1 #Number of wanted results 
 StartAt = 0 #if script was run before and an enhancement of the dataset is wanted, set the index accordingly.
 #if the dataset features the files 0 to 100 set the StartAt variable to 101.
 Directory = 'D:/blender_projects/handscript/test' #Filepath in witch the output will be saved(windows)-------------------------WINDOWS FORMAT
 #Directory = '/Users/Oliver/Documents/projektarbeit/Handv2mitscript/exports' #-----------------------------------------------------MAC FORMAT
 
-#define all needed variables that are set by the script here----------------------------------------------------------------------------------
+#define all needed variables that are set by the script here
 #booleans will be set via the script and will later be exported in the labels file
 hasWatch = False
 hasRing = False
 hasSleeve = False
 isLeftHand = False
+#HandList is used to store objects of class Hand, which stores all the needed Data for one Hand in one Objekt
 HandList = []
 ImageFilePath = Directory + '/images' #directory where the images will be saved
 LabelsFilePath = Directory + '/labels' #directory where the labelfiles will b saved
+#--------------------------------------- END OF [VARIABLES] ----------------------------------------------------------
 
-#--------------------------------------- START OF [BEFORE THE LOOP] ----------------------------------------------------------
+#--------------------------------------- START OF [PREPARATION] ----------------------------------------------------------
 #
 #creates the Directory with a given path --- helpmethod for createDirectories
 def createDirectory(path):
@@ -38,9 +41,9 @@ def createDirectory(path):
 
 #this makes sure the main Directory exists, as well as the Directories for the renders and the labels
 def createDirectories():
-    #create additional directories inside the mainpath for pictures and labels
     #take the defined filepaths for export and make sure they exist(create them)
     createDirectory(Directory)
+    #create additional directories inside the mainpath for pictures and labels
     createDirectory(LabelsFilePath)
     createDirectory(ImageFilePath)
     
@@ -79,12 +82,22 @@ def getRig(string):
 def initHands():
     for x in bpy.data.collections:
         if "CollectionHand" in x.name:
-            Name = getSubString(x.name, len(x.name)-5, len(x.name)) #this gets a String like "Hand1" to find all collections and the rig starting with "Hand1"
+            Name = getSubString(x.name, len(x.name)-5, len(x.name))      #this gets a String like "Hand1" to find all collections and the rig starting with "Hand1"
             HandList.append(Hand(x,
                                     getSubCollection(Name + "Watch"),
                                     getSubCollection(Name + "Ring"),
                                     getSubCollection(Name + "Cloth"),
                                     getRig(Name + "Rig")))
+                                    
+#hides the collection for the renderer    
+def hideHand(Hand):
+    Hand.collection.hide_render = True
+    for i in Hand.watches:
+        i.hide_render = True
+    for i in Hand.rings:
+        i.hide_render = True
+    for i in Hand.clothes:
+        i.hide_render = True
 
 #before the mainloop hide all hand collections
 def hideAllHands():
@@ -96,12 +109,12 @@ def init():
     createDirectories()
     initHands()
     hideAllHands()
-#--------------------------------------- END OF [BEFORE THE LOOP] ----------------------------------------------------------
+#--------------------------------------- END OF [PREPARATION] ----------------------------------------------------------
 
 #--------------------------------------- START OF [MAIN LOOP] --------------------------------------------------------------
 #
 
-#Hides the Collection of the given Hand in the Viewport
+#unhides the Collection of the given Hand in the Viewport
 def unhideOne(Hand):
     Hand.collection.hide_render = False  
     for i in Hand.watches:
@@ -110,6 +123,7 @@ def unhideOne(Hand):
         i.hide_render = False
     for i in Hand.clothes:
         i.hide_render = False
+    #set isLeftHand bool here. used for export later
     ForeArmBone = Hand.rig.pose.bones[0].name
     side = getSubString(ForeArmBone, len(ForeArmBone) - 1, len(ForeArmBone))
     if 'l' in side:
@@ -119,17 +133,7 @@ def unhideOne(Hand):
         
     print(Hand.collection.name)
 
-#unhides the collection in the Viewport    
-def hideHand(Hand):
-    Hand.collection.hide_render = True
-    for i in Hand.watches:
-        i.hide_render = True
-    for i in Hand.rings:
-        i.hide_render = True
-    for i in Hand.clothes:
-        i.hide_render = True
-
-#hides/unhides clothes, ring and watch based on randomness, but makes sure only one of each is enabled
+#hides/unhides clothes, ring and watch based on randomness, but makes sure only one of each or none is enabled
 #sets the booleans for labelexport
 def randomize(Hand):
     #hide all watches, rings and sleeves
@@ -219,6 +223,7 @@ def renderImage(counter):
     bpy.context.scene.render.filepath = path
     bpy.ops.render.render(write_still = 1)
 
+#renders 2 images from the 2 leap cameras and saves them at the given path at the top of the script
 def renderLeapImage(counter):
     bpy.context.scene.camera = bpy.data.objects["IRCamera_L"]
     path = ImageFilePath + '/' + str(counter) + 'l.png'
@@ -236,7 +241,7 @@ def renderLeapImage(counter):
 def formatFloat(float):
     return '{:.12f}'.format(float)
 
-#writes name of bone, HeadLocationVector and TailLocationVector in txt file for each bone
+#writes name of bone, HeadLocationVector and TailLocationVector in txt file for each bone, then writes the defined booleans
 def exportLabels(counter, Rig, HandCollection):
     path = LabelsFilePath + '/' + str(counter) + '.txt'
     f = open(str(path), 'w')
@@ -259,16 +264,18 @@ def exportLabels(counter, Rig, HandCollection):
     f.write('hasRing = ' + str(hasRing) + '\n')
     f.write('hasSleeve = ' + str(hasSleeve) + '\n')
     f.write('isLeftHand = ' + str(isLeftHand) + '\n')
-    f.write('HandCollection = ' + str(HandCollection))
     f.close()  
 
 #the main method
 def loop():
+    if StartAt < 0:
+        print("StartAt has to be 0 or higher")
+        return
     index = StartAt
-    #choose one Hand random
-    for index in range(StartAt, NumberOfPoses):
-        
+    for index in range(StartAt, StartAt + NumberOfPoses):
+        #get length of HandList
         temp = len(HandList)
+        #get Random Index 0 <= n < Number of Hands
         HandIndex = randrange(temp)
         Hand = HandList[HandIndex]
         #unhide Hand, cloth, ring and watch in render
@@ -292,11 +299,11 @@ def loop():
         current_time = now.strftime("%H:%M:%S")
         print("Current Time = ", current_time)
         print('-----------------\n')
+#--------------------------------------- END OF [MAIN LOOP] -----------------------------------------------------------------
 
-#------------------------ main -------------       
+#--------------------------------------- START OF [METHOD CALLS] ------------------------------------------------------------
+#     
 init()
 loop()
 print("___________script finished")
-
-
-#tiefenbild(opencv)
+#--------------------------------------- END OF [METHOD CALLS] --------------------------------------------------------------
