@@ -236,6 +236,8 @@ def renderLeapImage(counter):
     bpy.context.scene.render.image_settings.file_format = 'PNG'
     bpy.context.scene.render.filepath = path2
     bpy.ops.render.render(write_still = 1)
+    
+    #rendering a depth image may be included here
 
 #formats the float to supress 1*e10 etc. format
 def formatFloat(float):
@@ -268,6 +270,7 @@ def exportLabels(counter, Rig, HandCollection):
 
 #the main method
 def loop():
+    
     if StartAt < 0:
         print("StartAt has to be 0 or higher")
         return
@@ -278,6 +281,13 @@ def loop():
         #get Random Index 0 <= n < Number of Hands
         HandIndex = randrange(temp)
         Hand = HandList[HandIndex]
+        
+        #not setting mode to pose mode has occasionally caused problems
+        #set rig of desired hand to active object
+        bpy.context.view_layer.objects.active = Hand.rig
+        #set mode to pose mode
+        bpy.ops.object.mode_set(mode='POSE')
+        
         #unhide Hand, cloth, ring and watch in render
         unhideOne(Hand)
     
